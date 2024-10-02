@@ -1,0 +1,144 @@
+<!-- locations.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Locations</title>
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .response, .locations-list {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body class="container">
+    <h1 class="my-4 text-center">Gestión de Locations</h1>
+
+    <h2>Crear Nueva Location</h2>
+    <form id="locationForm" class="row g-3">
+        <div class="col-md-6">
+            <label for="name" class="form-label">Nombre</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+            <label for="city" class="form-label">Ciudad</label>
+            <input type="text" id="city" name="city" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+            <label for="neighborhood" class="form-label">Barrio</label>
+            <input type="text" id="neighborhood" name="neighborhood" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+            <label for="address" class="form-label">Dirección</label>
+            <input type="text" id="address" name="address" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+            <label for="accessibility" class="form-label">Accesibilidad</label>
+            <input type="text" id="accessibility" name="accessibility" class="form-control" required>
+        </div>
+        <div class="col-md-12">
+            <label for="desc" class="form-label">Descripción</label>
+            <textarea id="desc" name="desc" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary">Crear Location</button>
+        </div>
+    </form>
+
+    <div class="response mt-4" id="response"></div>
+
+    <h2 class="my-4">Locations Existentes</h2>
+    <div class="locations-list" id="locationsList">
+        <!-- Aquí se mostrarán las locations -->
+    </div>
+
+    <!-- Bootstrap JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JavaScript para gestionar locations -->
+    <script>
+        const locationForm = document.getElementById('locationForm');
+        const responseDiv = document.getElementById('response');
+        const locationsList = document.getElementById('locationsList');
+
+
+        // Función para mostrar todas las locations
+        const fetchLocations = async () => {
+            try {
+                const res = await fetch('/routes/locations');
+        
+                if (!res.ok) {
+                    throw new Error('Error al obtener las locations');
+                }
+        
+                const data = await res.json();
+                console.log('Locations obtenidas:', data); 
+
+                locationsList.innerHTML = ''; // Limpia la lista antes de actualizar
+                if (data.length === 0) {
+                    locationsList.innerHTML = `<div class="alert alert-warning">No hay locations disponibles.</div>`;
+                }
+
+                data.forEach(location => {
+                    const locationDiv = document.createElement('div');
+                    locationDiv.className = 'card my-2';
+                    locationDiv.innerHTML = `
+                        <div class="card-body">
+                            <h5 class="card-title">${location.name}</h5>
+                            <p class="card-text">
+                                <strong>Ciudad:</strong> ${location.city}<br>
+                                <strong>Barrio:</strong> ${location.neighborhood}<br>
+                                <strong>Dirección:</strong> ${location.address}<br>
+                                <strong>Accesibilidad:</strong> ${location.accessibility}<br>
+                                <strong>Descripción:</strong> ${location.desc}
+                            </p>
+                        </div>
+                    `;
+                    locationsList.appendChild(locationDiv);
+                });
+            } catch (error) {
+                console.error('Error fetching locations:', error);
+                responseDiv.innerHTML = `<div class="alert alert-danger">Error al cargar las locations.</div>`;
+            }
+        };
+
+
+        // Cargar locations al cargar la página
+        document.addEventListener('DOMContentLoaded', fetchLocations);
+
+        // Función para crear una nueva location
+        locationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(locationForm);
+            const locationData = {};
+            formData.forEach((value, key) => {
+                locationData[key] = value;
+            });
+
+            try {
+                const res = await fetch('/routes/locations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(locationData)
+                });
+
+                const result = await res.json();
+                if (res.ok) {
+                    responseDiv.innerHTML = `<div class="alert alert-success">Location creada exitosamente.</div>`;
+                    locationForm.reset();
+                    fetchLocations(); // Actualiza la lista de locations
+                } else {
+                    responseDiv.innerHTML = `<div class="alert alert-danger">${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Error creating location:', error);
+                responseDiv.innerHTML = `<div class="alert alert-danger">Error al crear la location.</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
